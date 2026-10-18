@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Skill Gap Analysis - {{ job.title }} - CareerBridge{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('jobs.index') }}" class="text-decoration-none">Job Roles</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="text-decoration-none">{{ job.title }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Skill Gap Analysis</li>
+        </ol>
+    </nav>
+
+    <!-- Header & Formula Card -->
+    <div class="cb-card p-4 p-md-5 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, var(--primary-light) 100%);">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <span class="badge badge-category mb-2">{{ job.category }}</span>
+                <h2 class="fw-bold mb-2">Skill Gap Analysis: {{ job.title }}</h2>
+                <p class="text-muted small mb-3">
+                    Evaluation formula: <code class="bg-white p-1 px-2 rounded border text-primary">Required Match % = (Matched Required Skills / Total Required Skills) &times; 100</code>
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if has_roadmap %}
+                        <a href="{{ url_for('roadmap.index', id=roadmap_id) }}" class="btn-cb-primary btn-sm py-2 px-3">
+                            <i class="fa-solid fa-route me-1"></i> Open Active Learning Roadmap
+                        </a>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('roadmap.generate', job_id=job.id) }}" class="d-inline">
+                            <button type="submit" class="btn-cb-primary btn-sm py-2 px-3">
+                                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Generate Personalized Roadmap Now
+                            </button>
+                        </form>
+                    {% endif %}
+                    <a href="{{ url_for('skills.index') }}" class="btn-cb-outline btn-sm py-2 px-3">
+                        <i class="fa-solid fa-layer-group me-1"></i> Update My Skills
+                    </a>
+                </div>
+            </div>
+
+            <!-- Big Visual Match Gauge -->
+            <div class="col-lg-4 text-center text-lg-end">
+                <div class="d-inline-flex flex-column align-items-center p-4 bg-white rounded-4 shadow-sm border" style="min-width: 220px;">
+                    <div class="match-circle mb-2 {% if match.required_match_pct >= 70 %}bg-success-subtle text-success border border-success{% elif match.required_match_pct >= 40 %}bg-warning-subtle text-warning border border-warning{% else %}bg-danger-subtle text-danger border border-danger{% endif %}">
+                        <span class="fs-2 lh-1">{{ match.required_match_pct }}%</span>
+                        <small class="text-muted text-uppercase" style="font-size: 0.65rem;">Required Match</small>
+                    </div>
+                    <div class="small fw-bold text-slate-800">
+                        {{ match.matched_required }} / {{ match.total_required }} Required Competencies
+                    </div>
+                    <small class="text-muted">Overall Composite: {{ match.overall_match_pct }}%</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Breakdown Bar -->
+    <div class="cb-card p-4 mb-4">
+        <h6 class="fw-bold mb-2">Overall Role Readiness Breakdown</h6>
+        <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>Required Skills Matched: <strong>{{ match.matched_required }}</strong> of {{ match.total_required }}</span>
+            <span>Missing: <strong class="text-danger">{{ match.missing_total_count }}</strong> Skills</span>
+        </div>
+        <div class="progress-cb" style="height: 14px;">
+            <div class="progress-cb-bar" style="width: {{ match.required_match_pct }}%;"></div>
+        </div>
+    </div>
+
+    <!-- Side-by-Side Dual Analysis Columns -->
+    <div class="row g-4 mb-4">
+        <!-- 1. Matched Skills (Green) -->
+        <div class="col-lg-6">
+            <div class="cb-card p-4 h-100 border-top border-4 border-success">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="stat-icon bg-success-subtle text-success mb-0" style="width: 36px; height: 36px; font-size: 1rem;">
+                            <i class="fa-solid fa-check-double"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">Matched Skills ({{ match.matched_skills|length }})</h5>
+                    </div>
+                    <span class="badge bg-success-subtle text-success fw-bold">Verified in Profile</span>
+                </div>
+
+                {% if match.matched_skills %}
+                <div class="d-flex flex-column gap-3">
+                    {% for sk in match.matched_skills %}
+                    <div class="p-3 rounded-3 border bg-light">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-0 text-slate-900">{{ sk.skill_name }}</h6>
+                                <span class="badge badge-category mt-1">{{ sk.category }}</span>
+                            </div>
+                            <span class="skill-badge badge-{{ sk.user_proficiency|lower }}">
+                                <i class="fa-solid fa-circle-dot" style="font-size: 0.45rem;"></i> {{ sk.user_proficiency }}
+                            </span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center small pt-2 border-top">
+                            <span class="text-muted">Target Requirement:</span>
+                            {% if sk.proficiency_gap %}
+                                <span class="text-warning fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i> Needs Level Up to {{ sk.minimum_proficiency }}</span>
+                            {% else %}
+                                <span class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i> Meets {{ sk.minimum_proficiency }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-solid fa-clipboard-question display-4 mb-2 text-slate-300"></i>
+                    <p class="small mb-0">None of your current profile skills overlap with this role yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 2. Missing Skills (Red/Amber) -->
+        <div class="col-lg-6">
+            <div class="cb-card p-4 h-100 border-top border-4 border-danger">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="stat-icon bg-danger-subtle text-danger mb-0" style="width: 36px; height: 36px; font-size: 1rem;">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">Skill Gaps to Address ({{ match.missing_skills|length }})</h5>
+                    </div>
+                    <span class="badge bg-danger-subtle text-danger fw-bold">Action Needed</span>
+                </div>
+
+                {% if match.missing_skills %}
+                <div class="d-flex flex-column gap-3">
+                    {% for sk in match.missing_skills %}
+                    <div class="p-3 rounded-3 border bg-white shadow-xs">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-0 text-slate-900">{{ sk.skill_name }}</h6>
+                                <span class="badge badge-category mt-1">{{ sk.category }}</span>
+                            </div>
+                            <span class="skill-badge {% if sk.is_required %}badge-required{% else %}badge-preferred{% endif %}">
+                                {% if sk.is_required %}Required{% else %}Preferred{% endif %}
+                            </span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center small pt-2 border-top">
+                            <span class="text-muted">Target Proficiency:</span>
+                            <span class="fw-bold text-slate-800">{{ sk.minimum_proficiency }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-success">
+                    <i class="fa-solid fa-circle-check display-4 mb-2"></i>
+                    <h5 class="fw-bold">No Missing Skills!</h5>
+                    <p class="small text-muted mb-0">You already possess all required and preferred skills for this position.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action Banner -->
+    <div class="cb-card p-4 text-center bg-white border-0 shadow-sm">
+        <h5 class="fw-bold mb-2">Turn These Skill Gaps into Milestones</h5>
+        <p class="text-muted small max-w-700 mx-auto mb-3">Our roadmap generator converts every missing skill into an actionable learning module with recommended resources and estimated hours.</p>
+        <div class="d-flex justify-content-center gap-3">
+            {% if has_roadmap %}
+                <a href="{{ url_for('roadmap.index', id=roadmap_id) }}" class="btn-cb-primary">
+                    <i class="fa-solid fa-route me-1"></i> Continue Working on Roadmap
+                </a>
+            {% else %}
+                <form method="POST" action="{{ url_for('roadmap.generate', job_id=job.id) }}">
+                    <button type="submit" class="btn-cb-primary">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Generate Personalized Learning Roadmap
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

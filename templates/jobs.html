@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Target Job Roles - CareerBridge{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h3 class="fw-bold mb-1">Target Tech Roles & Matching</h3>
+            <p class="text-muted small mb-0">Discover how your skills stack up against pre-configured industry job profiles.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-white text-slate-800 border py-2 px-3 shadow-xs">
+                Showing {{ filtered_count }} of {{ all_count }} Roles
+            </span>
+        </div>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="cb-card p-3 mb-4">
+        <form method="GET" action="{{ url_for('jobs.index') }}" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search by role title, description, or category..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="min_match" class="form-select">
+                    <option value="">Any Match %</option>
+                    <option value="25" {% if min_match_val == '25' %}selected{% endif %}>25%+ Match</option>
+                    <option value="50" {% if min_match_val == '50' %}selected{% endif %}>50%+ Match</option>
+                    <option value="75" {% if min_match_val == '75' %}selected{% endif %}>75%+ Match</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn-cb-primary btn-sm flex-grow-1">Filter</button>
+                {% if search_query or category_filter or min_match_val %}
+                <a href="{{ url_for('jobs.index') }}" class="btn btn-sm btn-secondary" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i></a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Jobs Cards Grid -->
+    {% if job_matches %}
+    <div class="row g-4">
+        {% for item in job_matches %}
+        {% set job = item.job %}
+        {% set match = item.match %}
+        <div class="col-md-6 col-lg-4">
+            <div class="cb-card cb-card-hover p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge badge-category">{{ job.category }}</span>
+                        <div class="text-end">
+                            <span class="badge {% if match.required_match_pct >= 70 %}bg-success{% elif match.required_match_pct >= 40 %}bg-warning text-dark{% else %}bg-secondary{% endif %} py-1 px-2 rounded-pill fw-bold" style="font-size: 0.8rem;">
+                                {{ match.required_match_pct }}% Match
+                            </span>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-1 text-slate-900">
+                        <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="text-decoration-none text-slate-900">{{ job.title }}</a>
+                    </h5>
+                    <small class="text-muted d-block mb-3">
+                        <i class="fa-solid fa-briefcase text-primary me-1"></i> {{ job.experience_level }} &bull; <i class="fa-solid fa-money-bill-wave text-success me-1"></i> {{ job.salary_range }}
+                    </small>
+
+                    <p class="text-muted small mb-3 text-truncate-2" style="font-size: 0.84rem;">
+                        {{ job.description }}
+                    </p>
+
+                    <!-- Match Progress Bar -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small fw-bold mb-1" style="font-size: 0.78rem;">
+                            <span>Required Skills: {{ match.matched_required }} / {{ match.total_required }}</span>
+                            <span class="text-primary">{{ match.required_match_pct }}%</span>
+                        </div>
+                        <div class="progress-cb">
+                            <div class="progress-cb-bar" style="width: {{ match.required_match_pct }}%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Skills Mini-Pills Preview -->
+                    <div class="mb-3">
+                        <small class="text-muted text-uppercase fw-bold d-block mb-1" style="font-size: 0.68rem;">SKILL BREAKDOWN</small>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for sk in match.matched_skills[:3] %}
+                            <span class="skill-badge badge-advanced py-0 px-2" style="font-size: 0.72rem;">
+                                <i class="fa-solid fa-check"></i> {{ sk.skill_name }}
+                            </span>
+                            {% endfor %}
+                            {% for sk in match.missing_skills[:2] %}
+                            <span class="skill-badge badge-required py-0 px-2" style="font-size: 0.72rem;">
+                                <i class="fa-solid fa-xmark"></i> {{ sk.skill_name }}
+                            </span>
+                            {% endfor %}
+                            {% if (match.matched_skills|length + match.missing_skills|length) > 5 %}
+                            <span class="badge bg-light text-muted border py-0 px-1" style="font-size: 0.72rem;">
+                                +{{ (match.matched_skills|length + match.missing_skills|length) - 5 }} more
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-top d-flex gap-2 justify-content-between align-items-center">
+                    <a href="{{ url_for('jobs.skill_gap', job_id=job.id) }}" class="btn btn-sm btn-cb-outline flex-grow-1 text-center py-2">
+                        <i class="fa-solid fa-chart-pie me-1"></i> Skill Gap
+                    </a>
+
+                    {% if item.has_roadmap %}
+                    <a href="{{ url_for('roadmap.index', id=item.roadmap_id) }}" class="btn btn-sm btn-success py-2 px-3 text-nowrap rounded-pill">
+                        <i class="fa-solid fa-route me-1"></i> Roadmap
+                    </a>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('roadmap.generate', job_id=job.id) }}" class="m-0">
+                        <button type="submit" class="btn btn-sm btn-cb-primary py-2 px-3 text-nowrap rounded-pill" title="Generate tailored learning roadmap">
+                            <i class="fa-solid fa-plus me-1"></i> Roadmap
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="cb-card p-5 text-center my-4">
+        <i class="fa-solid fa-briefcase text-muted display-4 mb-3"></i>
+        <h5 class="fw-bold">No job roles match the current filter criteria.</h5>
+        <p class="text-muted small">Try relaxing your search terms or minimum match percentage.</p>
+        <a href="{{ url_for('jobs.index') }}" class="btn-cb-outline btn-sm">Reset All Filters</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

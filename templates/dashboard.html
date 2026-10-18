@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - CareerBridge{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Welcome Header & Profile Summary -->
+    <div class="cb-card p-4 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, var(--primary-light) 100%);">
+        <div class="row align-items-center g-3">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="logo-badge" style="width: 56px; height: 56px; font-size: 1.6rem;">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <h2 class="fw-bold mb-1">Hello, {{ user.full_name }}!</h2>
+                        <p class="text-muted mb-0 small">
+                            <i class="fa-solid fa-graduation-cap text-primary me-1"></i> {{ user.degree or 'Student' }} &bull; {{ user.department or 'Engineering' }}
+                            {% if user.college_name %}&bull; <span class="d-none d-md-inline">{{ user.college_name }}</span>{% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% if user.career_goal %}
+                <div class="mt-2 text-slate-700 small">
+                    <strong>Career Target:</strong> <span class="badge bg-white text-primary border shadow-xs">{{ user.career_goal }}</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <a href="{{ url_for('resume.index') }}" class="btn-cb-primary btn-sm py-2 px-3">
+                        <i class="fa-solid fa-file-invoice"></i> Analyze Resume
+                    </a>
+                    <a href="{{ url_for('skills.index') }}" class="btn-cb-outline btn-sm py-2 px-3">
+                        <i class="fa-solid fa-plus"></i> Add Skills
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State Banner if student has 0 skills -->
+    {% if total_skills == 0 %}
+    <div class="cb-card p-4 mb-4 border-0 shadow-sm text-center bg-white">
+        <div class="max-w-700 mx-auto py-3">
+            <div class="stat-icon bg-warning-subtle text-warning mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.6rem;">
+                <i class="fa-solid fa-compass-drafting"></i>
+            </div>
+            <h4 class="fw-bold">Your Profile is Ready for Skills!</h4>
+            <p class="text-muted small mb-4">To enable job role matching, skill gap discovery, and personalized roadmap generation, add your existing technical skills or let our local parser extract them from your resume.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{{ url_for('resume.index') }}" class="btn-cb-primary">
+                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload Resume (.PDF / .DOCX)
+                </a>
+                <a href="{{ url_for('skills.index') }}" class="btn-cb-outline">
+                    <i class="fa-solid fa-list-check me-1"></i> Add Skills Manually
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 5 Dynamic Stat Cards -->
+    <div class="row g-3 mb-4">
+        <!-- 1. Profile Completion % -->
+        <div class="col-sm-6 col-lg">
+            <div class="stat-card h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="stat-lbl">Profile Completion</span>
+                    <div class="stat-icon bg-info-subtle text-info mb-0" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                </div>
+                <div class="stat-val mt-2">{{ profile_completion_pct }}%</div>
+                <div class="progress-cb mt-2">
+                    <div class="progress-cb-bar" style="width: {{ profile_completion_pct }}%;"></div>
+                </div>
+                <small class="text-muted d-block mt-2 font-monospace" style="font-size: 0.76rem;">Profile, Skills & Goals</small>
+            </div>
+        </div>
+
+        <!-- 2. Total Skills -->
+        <div class="col-sm-6 col-lg">
+            <div class="stat-card h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="stat-lbl">Total Skills</span>
+                    <div class="stat-icon bg-primary-subtle text-primary mb-0" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                </div>
+                <div class="stat-val mt-2">{{ total_skills }}</div>
+                <small class="text-muted d-block mt-2" style="font-size: 0.78rem;">
+                    <a href="{{ url_for('skills.index') }}" class="text-primary text-decoration-none fw-bold">Manage in Skills &rarr;</a>
+                </small>
+            </div>
+        </div>
+
+        <!-- 3. Recommended Roles -->
+        <div class="col-sm-6 col-lg">
+            <div class="stat-card h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="stat-lbl">Matching Roles</span>
+                    <div class="stat-icon bg-success-subtle text-success mb-0" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="fa-solid fa-briefcase"></i>
+                    </div>
+                </div>
+                <div class="stat-val mt-2">{{ recommended_roles_count }}</div>
+                <small class="text-muted d-block mt-2" style="font-size: 0.78rem;">
+                    <a href="{{ url_for('jobs.index') }}" class="text-success text-decoration-none fw-bold">View Roles &rarr;</a>
+                </small>
+            </div>
+        </div>
+
+        <!-- 4. Average Job Match % -->
+        <div class="col-sm-6 col-lg">
+            <div class="stat-card h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="stat-lbl">Avg Job Match</span>
+                    <div class="stat-icon bg-warning-subtle text-warning mb-0" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                </div>
+                <div class="stat-val mt-2">{{ avg_job_match }}%</div>
+                <small class="text-muted d-block mt-2" style="font-size: 0.78rem;">Across all tech roles</small>
+            </div>
+        </div>
+
+        <!-- 5. Roadmap Progress % -->
+        <div class="col-sm-6 col-lg">
+            <div class="stat-card h-100">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="stat-lbl">Roadmap Progress</span>
+                    <div class="stat-icon bg-secondary-subtle text-secondary mb-0" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                </div>
+                <div class="stat-val mt-2">{{ overall_roadmap_progress }}%</div>
+                <div class="progress-cb mt-2">
+                    <div class="progress-cb-bar bg-success" style="width: {{ overall_roadmap_progress }}%;"></div>
+                </div>
+                <small class="text-muted d-block mt-2" style="font-size: 0.78rem;">
+                    <a href="{{ url_for('roadmap.index') }}" class="text-secondary text-decoration-none fw-bold">Roadmap items &rarr;</a>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Chart 1: Skill Category Distribution -->
+        <div class="col-lg-5">
+            <div class="cb-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Skill Category Breakdown</h5>
+                    <span class="badge bg-light text-muted border">Live Database</span>
+                </div>
+                {% if total_skills > 0 %}
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="categoryDistributionChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-chart-pie display-4 mb-2 text-slate-300"></i>
+                        <p class="small mb-0">No skills added yet to display distribution.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Chart 2: Top Job Match Comparisons -->
+        <div class="col-lg-7">
+            <div class="cb-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Top Role Match Comparison</h5>
+                    <span class="badge bg-light text-muted border">Required vs Overall %</span>
+                </div>
+                {% if top_matches and top_matches[0].match.required_match_pct > 0 %}
+                    <div style="position: relative; height: 280px;">
+                        <canvas id="jobMatchComparisonChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-chart-simple display-4 mb-2 text-slate-300"></i>
+                        <p class="small mb-0">Add more technical skills to compare target role readiness scores.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Dual Column: Top Recommended Roles & Pending Milestones -->
+    <div class="row g-4">
+        <!-- Top Recommended Roles Column -->
+        <div class="col-lg-6">
+            <div class="cb-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Top Recommended Positions</h5>
+                    <a href="{{ url_for('jobs.index') }}" class="btn btn-sm btn-link text-decoration-none">Explore All</a>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    {% for m in top_matches[:4] %}
+                    <div class="p-3 rounded-3 border bg-light d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="badge badge-category">{{ m.job.category }}</span>
+                                <h6 class="fw-bold mb-0 text-slate-900">{{ m.job.title }}</h6>
+                            </div>
+                            <div class="small text-muted">
+                                Matched: <span class="fw-bold text-success">{{ m.match.matched_required }}</span> / {{ m.match.total_required }} Required Skills
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold fs-5 text-primary">{{ m.match.required_match_pct }}%</div>
+                            <a href="{{ url_for('jobs.skill_gap', job_id=m.job.id) }}" class="btn btn-sm btn-cb-outline py-1 px-2" style="font-size: 0.75rem;">
+                                Skill Gap
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Milestones / Active Roadmaps Column -->
+        <div class="col-lg-6">
+            <div class="cb-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Upcoming Learning Milestones</h5>
+                    <a href="{{ url_for('roadmap.index') }}" class="btn btn-sm btn-link text-decoration-none">My Roadmaps</a>
+                </div>
+
+                {% if pending_milestones %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for item in pending_milestones %}
+                        <div class="p-3 rounded-3 border bg-white d-flex align-items-center justify-content-between" id="dash-milestone-{{ item.id }}">
+                            <div class="pe-2">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge bg-secondary-subtle text-secondary small">{{ item.skill_name }}</span>
+                                    <small class="text-muted">{{ item.job_title }}</small>
+                                </div>
+                                <h6 class="fw-bold mb-1 small text-slate-900">{{ item.milestone_title }}</h6>
+                                <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> Est. {{ item.estimated_hours }} hours</small>
+                            </div>
+                            <div>
+                                <select class="form-select form-select-sm roadmap-status-select" data-item-id="{{ item.id }}" style="font-size: 0.8rem; width: 130px;">
+                                    <option value="Not Started" {% if item.status == 'Not Started' %}selected{% endif %}>Not Started</option>
+                                    <option value="In Progress" {% if item.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="Completed" {% if item.status == 'Completed' %}selected{% endif %}>Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 bg-light rounded-3">
+                        <i class="fa-solid fa-flag-checkered text-success fs-2 mb-2"></i>
+                        <h6 class="fw-bold mb-1">No Active Milestones</h6>
+                        <p class="text-muted small mb-3">Pick a target job role from the catalog to generate your tailored roadmap.</p>
+                        <a href="{{ url_for('jobs.index') }}" class="btn-cb-primary btn-sm">Find a Role to Master</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Skill Category Distribution Doughnut Chart
+    const catLabels = {{ chart_categories_json|safe }};
+    const catData = {{ chart_category_data_json|safe }};
+    const catCanvas = document.getElementById('categoryDistributionChart');
+
+    if (catCanvas && catLabels.length > 0) {
+        new Chart(catCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    data: catData,
+                    backgroundColor: [
+                        '#4f46e5', '#06b6d4', '#10b981', '#f59e0b',
+                        '#8b5cf6', '#ec4899', '#3b82f6', '#64748b'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 }
+                        }
+                    }
+                },
+                cutout: '68%'
+            }
+        });
+    }
+
+    // 2. Top Job Match Comparison Bar Chart
+    const jobLabels = {{ chart_job_labels_json|safe }};
+    const jobReqData = {{ chart_job_required_pct_json|safe }};
+    const jobOverallData = {{ chart_job_overall_pct_json|safe }};
+    const jobCanvas = document.getElementById('jobMatchComparisonChart');
+
+    if (jobCanvas && jobLabels.length > 0) {
+        new Chart(jobCanvas, {
+            type: 'bar',
+            data: {
+                labels: jobLabels,
+                datasets: [
+                    {
+                        label: 'Required Match %',
+                        data: jobReqData,
+                        backgroundColor: '#4f46e5',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Overall Match %',
+                        data: jobOverallData,
+                        backgroundColor: '#94a3b8',
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: value => value + '%'
+                        },
+                        grid: { color: '#f1f5f9' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12 }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

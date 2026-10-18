@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Resume Analyzer - CareerBridge{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h3 class="fw-bold mb-1">Local Resume Analyzer</h3>
+            <p class="text-muted small mb-0">Extract and verify technical skills from your PDF or DOCX resume with 100% local privacy.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('skills.index') }}" class="btn-cb-outline btn-sm py-2 px-3">
+                <i class="fa-solid fa-layer-group"></i> View Current Skills
+            </a>
+        </div>
+    </div>
+
+    {% if step == 'review' and analysis %}
+    <!-- Review Screen -->
+    <div class="cb-card p-4 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, var(--primary-light) 100%);">
+        <div class="row align-items-center g-3">
+            <div class="col-lg-8">
+                <span class="badge bg-success-subtle text-success fw-bold px-3 py-2 rounded-pill mb-2">Extraction Complete</span>
+                <h3 class="fw-bold mb-1">Found {{ analysis.total_detected }} Skills in {{ filename }}</h3>
+                <p class="text-muted small mb-0">
+                    We detected <strong class="text-primary">{{ analysis.new_skills_count }}</strong> new skills not yet in your profile. Review proficiency levels and confirm to import.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{{ url_for('resume.index') }}" class="btn btn-sm btn-secondary rounded-pill px-3 py-2">
+                    <i class="fa-solid fa-arrow-rotate-left me-1"></i> Upload Another Resume
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suggested Roles Preview Bar -->
+    {% if analysis.recommended_roles %}
+    <div class="cb-card p-4 mb-4">
+        <h6 class="fw-bold mb-3"><i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>Predicted Job Role Fit Based on Resume</h6>
+        <div class="row g-3">
+            {% for r in analysis.recommended_roles %}
+            <div class="col-md-6 col-lg-3">
+                <div class="p-3 rounded-3 border bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="badge badge-category" style="font-size: 0.68rem;">{{ r.category }}</span>
+                        <span class="fw-bold text-success small">{{ r.required_match_pct }}% Match</span>
+                    </div>
+                    <div class="fw-bold small text-truncate text-slate-900">{{ r.title }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Skills Confirmation Form -->
+    <form method="POST" action="{{ url_for('resume.confirm_skills') }}">
+        <div class="cb-card p-4 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAllExtractedSkills" checked>
+                        <label class="form-check-label fw-bold small" for="selectAllExtractedSkills">Select All</label>
+                    </div>
+                    <span class="badge bg-primary rounded-pill px-3 py-2" id="selectedSkillsCounter">0 selected</span>
+                </div>
+                <button type="submit" class="btn-cb-primary btn-sm py-2 px-4">
+                    <i class="fa-solid fa-file-import me-1"></i> Add Selected Skills to Profile
+                </button>
+            </div>
+
+            <!-- Table of Extracted Skills -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small text-muted">
+                        <tr>
+                            <th style="width: 40px;"></th>
+                            <th>SKILL NAME</th>
+                            <th>CATEGORY</th>
+                            <th>SUGGESTED PROFICIENCY</th>
+                            <th>MENTIONS</th>
+                            <th>PROFILE STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sk in analysis.detected_skills %}
+                        <tr>
+                            <td>
+                                <input class="form-check-input extracted-skill-checkbox" type="checkbox" name="selected_skills" value="{{ sk.name }}" {% if not sk.is_existing %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-slate-900 fs-6">{{ sk.name }}</span>
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm" name="cat_{{ sk.name }}" style="max-width: 170px;">
+                                    {% for cat in categories %}
+                                    <option value="{{ cat }}" {% if sk.category == cat %}selected{% endif %}>{{ cat }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-select form-select-sm" name="prof_{{ sk.name }}" style="max-width: 160px;">
+                                    {% for prof in proficiencies %}
+                                    <option value="{{ prof }}" {% if sk.suggested_proficiency == prof %}selected{% endif %}>{{ prof }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ sk.count }}x in text</span>
+                            </td>
+                            <td>
+                                {% if sk.is_existing %}
+                                <span class="badge bg-light text-muted border"><i class="fa-solid fa-check me-1"></i> Already in Profile</span>
+                                {% else %}
+                                <span class="badge bg-success-subtle text-success border border-success"><i class="fa-solid fa-sparkles me-1"></i> New Skill</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="text-end pt-3 border-top mt-3">
+                <button type="submit" class="btn-cb-primary py-2 px-4">
+                    <i class="fa-solid fa-file-import me-1"></i> Confirm & Import Skills
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Text Preview Snippet -->
+    {% if analysis.text_snippet %}
+    <div class="cb-card p-4">
+        <h6 class="fw-bold mb-2 text-muted small text-uppercase"><i class="fa-solid fa-align-left me-2"></i>Extracted Resume Snippet Preview</h6>
+        <div class="p-3 bg-light rounded-3 font-monospace small text-slate-700 leading-relaxed border" style="max-height: 150px; overflow-y: auto;">
+            {{ analysis.text_snippet }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Upload Screen -->
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="cb-card p-4 p-md-5">
+                <form method="POST" action="{{ url_for('resume.index') }}" enctype="multipart/form-data">
+                    <input type="file" id="resumeFileInput" name="resume_file" accept=".pdf,.docx" style="display: none;" required>
+
+                    <!-- Drag & Drop Zone -->
+                    <div class="upload-dropzone mb-4" id="resumeDropzone">
+                        <div class="stat-icon bg-primary-subtle text-primary mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2.2rem;">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                        </div>
+                        <h4 class="fw-bold mb-1">Click to Upload or Drag & Drop</h4>
+                        <p class="text-muted small mb-2">Supported Formats: PDF (.pdf) or Word (.docx) &bull; Max 5 MB</p>
+                        <span class="badge bg-light text-muted border py-2 px-3 rounded-pill">
+                            <i class="fa-solid fa-shield-halved text-success me-1"></i> 100% Private & Processed Locally
+                        </span>
+                    </div>
+
+                    <!-- Selected File Info Preview Box -->
+                    <div id="selectedFileInfo" class="p-3 bg-light rounded-3 border mb-4" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="fa-solid fa-file-lines text-primary fs-3"></i>
+                                <div>
+                                    <div class="fw-bold text-slate-900" id="selectedFileName">filename.pdf</div>
+                                    <small class="text-muted" id="selectedFileSize">0 MB</small>
+                                </div>
+                            </div>
+                            <span class="badge bg-success-subtle text-success">Ready for Parsing</span>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn-cb-primary py-3 fs-6">
+                            <i class="fa-solid fa-magnifying-glass-chart me-2"></i> Analyze Resume & Extract Skills
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Analyzer Capabilities & Privacy Card -->
+        <div class="col-lg-4">
+            <div class="cb-card p-4 mb-4">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-microchip text-primary me-2"></i>How It Works</h5>
+                <ul class="list-unstyled small text-muted d-flex flex-column gap-3 mb-0">
+                    <li class="d-flex gap-2">
+                        <i class="fa-solid fa-check text-success mt-1"></i>
+                        <span><strong>Direct Text Parsing:</strong> Extracts text directly from structured PDF pages and DOCX paragraphs via Python libraries.</span>
+                    </li>
+                    <li class="d-flex gap-2">
+                        <i class="fa-solid fa-check text-success mt-1"></i>
+                        <span><strong>Standard Dictionary:</strong> Scans against 50+ validated technical competencies and framework aliases.</span>
+                    </li>
+                    <li class="d-flex gap-2">
+                        <i class="fa-solid fa-check text-success mt-1"></i>
+                        <span><strong>Full Control:</strong> Review every detected skill and assign desired proficiency before adding to your profile.</span>
+                    </li>
+                    <li class="d-flex gap-2">
+                        <i class="fa-solid fa-check text-success mt-1"></i>
+                        <span><strong>Zero Cloud Leaks:</strong> All processing is strictly local to your machine. No remote API calls are executed.</span>
+                    </li>
+                </ul>
+            </div>
+
+            {% if recent_uploads %}
+            <div class="cb-card p-4">
+                <h6 class="fw-bold mb-3 small text-uppercase text-muted">Recent Analysis History</h6>
+                <div class="d-flex flex-column gap-2 small">
+                    {% for up in recent_uploads %}
+                    <div class="p-2 border rounded bg-light">
+                        <div class="fw-bold text-truncate text-slate-900"><i class="fa-regular fa-file me-1"></i> {{ up.filename }}</div>
+                        <div class="text-muted" style="font-size: 0.72rem;">Uploaded {{ up.uploaded_at[:10] }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - CareerBridge{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="cb-card p-4 p-md-5 shadow-lg border-0">
+                <div class="text-center mb-4">
+                    <div class="logo-badge mx-auto mb-3" style="width: 50px; height: 50px; font-size: 1.4rem;">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <h3 class="fw-bold">Create Your Student Account</h3>
+                    <p class="text-muted small">Begin benchmarking your skills and receiving custom step-by-step career roadmaps.</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    <div class="row g-3">
+                        <!-- Full Name -->
+                        <div class="col-md-6">
+                            <label for="full_name" class="form-label fw-bold small text-muted">FULL NAME *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
+                                <input type="text" class="form-control border-start-0 py-2" id="full_name" name="full_name" value="{{ form_data.get('full_name', '') }}" placeholder="Alex Morgan" required>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-bold small text-muted">EMAIL ADDRESS *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-envelope text-muted"></i></span>
+                                <input type="email" class="form-control border-start-0 py-2" id="email" name="email" value="{{ form_data.get('email', '') }}" placeholder="alex@college.edu" required>
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="col-md-6">
+                            <label for="password" class="form-label fw-bold small text-muted">PASSWORD (MIN 6 CHARS) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-lock text-muted"></i></span>
+                                <input type="password" class="form-control border-start-0 py-2" id="password" name="password" placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="col-md-6">
+                            <label for="confirm_password" class="form-label fw-bold small text-muted">CONFIRM PASSWORD *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-shield-check text-muted"></i></span>
+                                <input type="password" class="form-control border-start-0 py-2" id="confirm_password" name="confirm_password" placeholder="••••••••" required>
+                            </div>
+                        </div>
+
+                        <!-- Academic Information Divider -->
+                        <div class="col-12 mt-4">
+                            <h6 class="fw-bold text-primary mb-2 border-bottom pb-2">
+                                <i class="fa-solid fa-school me-2"></i>Academic & Career Goals
+                            </h6>
+                        </div>
+
+                        <!-- College Name -->
+                        <div class="col-md-6">
+                            <label for="college_name" class="form-label fw-bold small text-muted">COLLEGE / UNIVERSITY NAME</label>
+                            <input type="text" class="form-control py-2" id="college_name" name="college_name" value="{{ form_data.get('college_name', '') }}" placeholder="e.g. Stanford University / MIT">
+                        </div>
+
+                        <!-- Degree -->
+                        <div class="col-md-6">
+                            <label for="degree" class="form-label fw-bold small text-muted">DEGREE</label>
+                            <select class="form-select py-2" id="degree" name="degree">
+                                <option value="B.Tech" {% if form_data.get('degree') == 'B.Tech' %}selected{% endif %}>B.Tech (Bachelor of Technology)</option>
+                                <option value="B.E." {% if form_data.get('degree') == 'B.E.' %}selected{% endif %}>B.E. (Bachelor of Engineering)</option>
+                                <option value="B.S. / B.Sc" {% if form_data.get('degree') == 'B.S. / B.Sc' %}selected{% endif %}>B.S. / B.Sc (Computer Science / IT)</option>
+                                <option value="BCA" {% if form_data.get('degree') == 'BCA' %}selected{% endif %}>BCA (Bachelor of Computer Applications)</option>
+                                <option value="M.Tech / M.S." {% if form_data.get('degree') == 'M.Tech / M.S.' %}selected{% endif %}>M.Tech / M.S.</option>
+                                <option value="MCA" {% if form_data.get('degree') == 'MCA' %}selected{% endif %}>MCA (Master of Computer Applications)</option>
+                                <option value="Other" {% if form_data.get('degree') == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+
+                        <!-- Department -->
+                        <div class="col-md-6">
+                            <label for="department" class="form-label fw-bold small text-muted">DEPARTMENT / MAJOR</label>
+                            <input type="text" class="form-control py-2" id="department" name="department" value="{{ form_data.get('department', '') }}" placeholder="Computer Science & Engineering">
+                        </div>
+
+                        <!-- Graduation Year -->
+                        <div class="col-md-6">
+                            <label for="graduation_year" class="form-label fw-bold small text-muted">EXPECTED GRADUATION YEAR</label>
+                            <select class="form-select py-2" id="graduation_year" name="graduation_year">
+                                {% for yr in [2024, 2025, 2026, 2027, 2028, 2029] %}
+                                    <option value="{{ yr }}" {% if form_data.get('graduation_year') == yr|string or (not form_data.get('graduation_year') and yr == 2026) %}selected{% endif %}>{{ yr }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Career Goal -->
+                        <div class="col-12">
+                            <label for="career_goal" class="form-label fw-bold small text-muted">CAREER GOAL / TARGET ROLE</label>
+                            <input type="text" class="form-control py-2" id="career_goal" name="career_goal" value="{{ form_data.get('career_goal', '') }}" placeholder="e.g. Aspiring Full-Stack Developer & Cloud Architect">
+                            <small class="text-muted">This helps our matching engine prioritize relevant technical positions for you.</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-cb-primary w-100 py-3 mt-4 fs-6">
+                        Complete Registration <i class="fa-solid fa-arrow-right ms-2"></i>
+                    </button>
+                </form>
+
+                <div class="text-center mt-4">
+                    <p class="text-muted small mb-0">Already registered? <a href="{{ url_for('auth.login') }}" class="text-primary fw-bold text-decoration-none">Sign In Here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

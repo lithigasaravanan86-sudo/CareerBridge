@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - CareerBridge{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- Profile Summary Sidebar -->
+        <div class="col-lg-4">
+            <div class="cb-card p-4 text-center mb-4">
+                <div class="logo-badge mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2rem;">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+                <h4 class="fw-bold mb-1">{{ user.full_name }}</h4>
+                <p class="text-muted small mb-2">{{ user.email }}</p>
+                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-bold">
+                    {{ user.degree or 'Student' }} &bull; {{ user.department or 'Engineering' }}
+                </span>
+
+                <hr class="my-4">
+
+                <div class="text-start">
+                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                        <span>Profile Completeness</span>
+                        <span class="text-primary">{{ profile_pct }}%</span>
+                    </div>
+                    <div class="progress-cb mb-3">
+                        <div class="progress-cb-bar" style="width: {{ profile_pct }}%;"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between small py-1 border-bottom">
+                        <span class="text-muted">Skills in Profile:</span>
+                        <span class="fw-bold">{{ skill_count }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small py-1 border-bottom">
+                        <span class="text-muted">Expected Graduation:</span>
+                        <span class="fw-bold">{{ user.graduation_year or 'Not set' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between small py-1">
+                        <span class="text-muted">Account Created:</span>
+                        <span class="fw-bold">{{ user.created_at[:10] if user.created_at else 'Recent' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Form -->
+        <div class="col-lg-8">
+            <div class="cb-card p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                    <div>
+                        <h4 class="fw-bold mb-1">Student Profile & Settings</h4>
+                        <p class="text-muted small mb-0">Update your academic information and career aspirations.</p>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.profile') }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="full_name" class="form-label fw-bold small text-muted">FULL NAME</label>
+                            <input type="text" class="form-control py-2" id="full_name" name="full_name" value="{{ user.full_name }}" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">EMAIL ADDRESS</label>
+                            <input type="email" class="form-control py-2 bg-light" value="{{ user.email }}" disabled>
+                            <small class="text-muted">Primary identifier (cannot be changed).</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="college_name" class="form-label fw-bold small text-muted">COLLEGE / UNIVERSITY</label>
+                            <input type="text" class="form-control py-2" id="college_name" name="college_name" value="{{ user.college_name or '' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="degree" class="form-label fw-bold small text-muted">DEGREE</label>
+                            <input type="text" class="form-control py-2" id="degree" name="degree" value="{{ user.degree or '' }}" placeholder="e.g. B.Tech / B.E.">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="department" class="form-label fw-bold small text-muted">DEPARTMENT / MAJOR</label>
+                            <input type="text" class="form-control py-2" id="department" name="department" value="{{ user.department or '' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="graduation_year" class="form-label fw-bold small text-muted">GRADUATION YEAR</label>
+                            <input type="number" class="form-control py-2" id="graduation_year" name="graduation_year" value="{{ user.graduation_year or 2026 }}">
+                        </div>
+
+                        <div class="col-12">
+                            <label for="career_goal" class="form-label fw-bold small text-muted">PRIMARY CAREER GOAL</label>
+                            <input type="text" class="form-control py-2" id="career_goal" name="career_goal" value="{{ user.career_goal or '' }}" placeholder="e.g. Full-Stack Web Developer">
+                        </div>
+
+                        <!-- Change Password Section -->
+                        <div class="col-12 mt-4 pt-3 border-top">
+                            <h6 class="fw-bold text-slate-800 mb-2">
+                                <i class="fa-solid fa-key me-2 text-primary"></i>Change Password (Optional)
+                            </h6>
+                            <p class="text-muted small">Leave blank if you do not wish to modify your existing password.</p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="new_password" class="form-label fw-bold small text-muted">NEW PASSWORD</label>
+                            <input type="password" class="form-control py-2" id="new_password" name="new_password" placeholder="••••••••">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="confirm_password" class="form-label fw-bold small text-muted">CONFIRM NEW PASSWORD</label>
+                            <input type="password" class="form-control py-2" id="confirm_password" name="confirm_password" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-2">
+                        <button type="submit" class="btn-cb-primary px-4 py-2">
+                            Save Changes <i class="fa-solid fa-check ms-1"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
